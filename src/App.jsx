@@ -32,17 +32,31 @@ export default function App() {
       }
 
       try {
-        const response = await fetch(GAS_URL);
-        const result = await response.json();
+        // Menggunakan opsi redirect: 'follow' karena GAS sering melakukan redirect internal
+        const response = await fetch(GAS_URL, { redirect: 'follow' });
+        
+        // KITA AMBIL SEBAGAI TEKS DULU (Untuk mengecek apakah Google mengirim HTML error atau JSON asli)
+        const rawText = await response.text();
 
-        if (result.status === 'success') {
-          setDataKaryawan(result.data);
-        } else {
-          setError(result.message || "Gagal mengambil data dari server.");
+        try {
+          // Mencoba mengubah teks menjadi format JSON
+          const result = JSON.parse(rawText);
+
+          if (result.status === 'success') {
+            setDataKaryawan(result.data);
+          } else {
+            // Ini jika nama sheet salah atau ada error dari dalam GAS
+            setError(`Pesan dari Server: ${result.message}`);
+          }
+        } catch (parseError) {
+          // JIKA ERROR MASUK KE SINI: Artinya Google mengirim halaman HTML Login/Error, bukan JSON.
+          console.error("Teks yang dikirim Google (Bukan JSON):", rawText);
+          setError("Akses diblokir oleh Google! Silakan buka Apps Script Anda > Kelola Deployment > Edit > Wajib pilih 'Versi baru' pada kolom Versi > Terapkan.");
         }
+
       } catch (err) {
         console.error("Fetch error:", err);
-        setError("Terjadi kesalahan jaringan. Pastikan URL sudah benar dan akses deployment Apps Script disetel ke 'Siapa saja' (Anyone).");
+        setError("Terjadi kesalahan jaringan (Network Error). Pastikan koneksi internet stabil atau matikan ekstensi AdBlocker jika ada.");
       } finally {
         setIsLoading(false);
       }
