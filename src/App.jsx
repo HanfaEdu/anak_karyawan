@@ -121,7 +121,8 @@ export default function App() {
     dataKaryawan.forEach(karyawan => {
       totalAnak += karyawan.anak.length;
       karyawan.anak.forEach(a => {
-        if (a.status.toLowerCase().includes("sekolah") || a.status.toLowerCase().includes("kuliah")) {
+        // Diperbaiki: Mencari spesifik "masih sekolah" atau "kuliah" agar tidak bentrok dengan "belum sekolah"
+        if (a.status.toLowerCase().includes("masih sekolah") || a.status.toLowerCase().includes("kuliah")) {
           totalAnakSekolah++;
         } else {
           totalAnakLainnya++;
@@ -145,7 +146,8 @@ export default function App() {
       // Filter status anak
       if (filterStatus === 'Semua') return true;
       
-      const hasAnakSekolah = karyawan.anak.some(a => a.status.toLowerCase().includes("sekolah") || a.status.toLowerCase().includes("kuliah"));
+      // Diperbaiki juga di filter agar akurat
+      const hasAnakSekolah = karyawan.anak.some(a => a.status.toLowerCase().includes("masih sekolah") || a.status.toLowerCase().includes("kuliah"));
       
       if (filterStatus === 'Ada Anak Sekolah') return hasAnakSekolah;
       if (filterStatus === 'Tidak Ada Anak Sekolah') return !hasAnakSekolah;
@@ -377,7 +379,8 @@ export default function App() {
           {/* List Karyawan */}
           <div className="flex flex-col gap-3">
             {filteredData.map((karyawan, index) => {
-              const anakSekolah = karyawan.anak.filter(a => a.status.toLowerCase().includes("sekolah") || a.status.toLowerCase().includes("kuliah")).length;
+              // Diperbaiki untuk deteksi anak secara spesifik per karyawan
+              const anakSekolah = karyawan.anak.filter(a => a.status.toLowerCase().includes("masih sekolah") || a.status.toLowerCase().includes("kuliah")).length;
               const anakLainnya = karyawan.anak.length - anakSekolah;
               const isExpanded = !!expandedIds[karyawan.id];
 
@@ -439,7 +442,8 @@ export default function App() {
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {karyawan.anak.map((anak, idx) => {
-                            const isSekolah = anak.status.toLowerCase().includes("sekolah") || anak.status.toLowerCase().includes("kuliah");
+                            // Diperbaiki juga di bagian perenderan status detail anak
+                            const isSekolah = anak.status.toLowerCase().includes("masih sekolah") || anak.status.toLowerCase().includes("kuliah");
                             return (
                               <div 
                                 key={idx} 
