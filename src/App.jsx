@@ -80,10 +80,10 @@ export default function App() {
   useEffect(() => {
     fetchData(false);
 
-    // Polling otomatis data dari Spreadsheet setiap 60 detik (60000 ms)
+    // Polling otomatis data dari Spreadsheet setiap 3 menit (180000 ms)
     const intervalId = setInterval(() => {
       fetchData(true);
-    }, 60000);
+    }, 180000); // 180.000 ms = 3 menit
 
     // Bersihkan interval saat komponen di-unmount agar menghemat memori
     return () => clearInterval(intervalId);
