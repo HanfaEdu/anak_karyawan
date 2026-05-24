@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Users, GraduationCap, Briefcase, User, Lightbulb, ChevronDown, ChevronUp, Loader2, AlertCircle } from 'lucide-react';
+import { Search, Users, GraduationCap, Briefcase, User, Lightbulb, ChevronDown, ChevronUp, Loader2, AlertCircle, Building2 } from 'lucide-react';
 
 // ==========================================
 // 1. KONFIGURASI URL BACKEND (GAS)
 // ==========================================
 // Ganti teks di bawah ini dengan URL Web App Google Apps Script Anda yang berakhiran /exec
-const GAS_URL = "TARUH_URL_WEB_APP_ANDA_DISINI";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyAuSYdm-IO9PqBBEC4CARCc7QkrLKsf1Cz2KsnHXoZqUeuC4YpBZo6qnw3vkLOUA2k/exec";
 
 export default function App() {
   // ==========================================
@@ -123,13 +123,68 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-800">
       
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-          <Users className="text-blue-600" size={32} />
-          Dashboard Rekap Data Anak LPIT
-        </h1>
-        <p className="text-slate-500 mt-2">Menampilkan data interaktif terintegrasi hasil Google Formulir</p>
+      {/* HEADER CANTIK DENGAN LOGO DAN INSTITUSI */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-5">
+          {/* Logo Frame */}
+          <div className="relative bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex items-center justify-center shrink-0 w-16 h-16 md:w-20 md:h-20 shadow-inner">
+            <img 
+              src="/logo.png" 
+              alt="Logo BIAS Yaumi Fatimah" 
+              className="w-full h-full object-contain rounded-xl"
+              onError={(e) => {
+                // Fallback jika logo.png gagal dimuat, akan mencoba memakai image.png
+                e.target.onerror = null;
+                e.target.src = "/image.png";
+                // Jika image.png juga tidak ada, tampilkan ikon default
+                e.target.style.display = 'none';
+                const fallbackIcon = document.getElementById('logo-fallback-icon');
+                if (fallbackIcon) fallbackIcon.classList.remove('hidden');
+              }}
+            />
+            {/* Fallback Icon jika semua gambar gagal */}
+            <div id="logo-fallback-icon" className="hidden text-blue-600">
+              <Building2 size={36} />
+            </div>
+          </div>
+
+          {/* Judul & Detail Branding */}
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold tracking-widest text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100 uppercase">
+                BIAS Yaumi Fatimah
+              </span>
+              <span className="text-xs font-medium text-slate-400">
+                • LPIT Terintegrasi
+              </span>
+            </div>
+            <h1 className="text-xl md:text-3xl font-extrabold text-slate-900 mt-2 tracking-tight">
+              Dashboard Rekap Data Anak
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Sistem informasi interaktif rekapitulasi data anak karyawan berbasis Google Formulir
+            </p>
+          </div>
+        </div>
+
+        {/* Lencana Samping Kanan (Desktop) */}
+        <div className="hidden lg:flex items-center gap-3 bg-slate-50 border border-slate-100 p-3 rounded-xl max-w-xs">
+          <div className="p-2 bg-white rounded-lg border border-slate-200/60 shadow-sm shrink-0">
+            <img 
+              src="/image.png" 
+              alt="Favicon" 
+              className="w-7 h-7 object-contain"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/logo.png";
+              }}
+            />
+          </div>
+          <div className="text-left pr-2">
+            <span className="block text-xs font-bold text-slate-700">Manajemen LPIT</span>
+            <span className="block text-[10px] text-slate-400">Data Real-Time</span>
+          </div>
+        </div>
       </div>
 
       {/* Tampilan Loading */}
