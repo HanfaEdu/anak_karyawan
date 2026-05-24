@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Users, GraduationCap, Briefcase, User, Lightbulb, ChevronDown, ChevronUp, Loader2, AlertCircle, Building2 } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Search, Users, GraduationCap, Briefcase, User, Lightbulb, ChevronDown, ChevronUp, Loader2, AlertCircle, Building2, RefreshCw } from 'lucide-react';
 
 // ==========================================
 // 1. KONFIGURASI URL BACKEND (GAS)
@@ -13,6 +13,8 @@ export default function App() {
   // ==========================================
   const [dataKaryawan, setDataKaryawan] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false); // Untuk melacak sinkronisasi latar belakang
+  const [lastUpdated, setLastUpdated] = useState('');
   const [error, setError] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,48 +24,70 @@ export default function App() {
   // ==========================================
   // 3. FETCH DATA DARI GOOGLE APPS SCRIPT
   // ==========================================
-  useEffect(() => {
-    const fetchData = async () => {
-      // Pengecekan jika URL belum diganti
-      if (GAS_URL === "TARUH_URL_WEB_APP_ANDA_DISINI") {
-        setError("Silakan masukkan URL Web App Google Apps Script Anda pada variabel GAS_URL di dalam kode.");
-        setIsLoading(false);
-        return;
-      }
+  const fetchData = useCallback(async (isBackground = false) => {
+    // Pengecekan jika URL belum diganti
+    if (GAS_URL === "TARUH_URL_WEB_APP_ANDA_DISINI") {
+      setError("Silakan masukkan URL Web App Google Apps Script Anda pada variabel GAS_URL di dalam kode.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (isBackground) {
+      setIsSyncing(true);
+    } else {
+      setIsLoading(true);
+    }
+
+    try {
+      // Menggunakan opsi redirect: 'follow' karena GAS sering melakukan redirect internal
+      const response = await fetch(GAS_URL, { redirect: 'follow' });
+      
+      // KITA AMBIL SEBAGAI TEKS DULU (Untuk mengecek apakah Google mengirim HTML error atau JSON asli)
+      const rawText = await response.text();
 
       try {
-        // Menggunakan opsi redirect: 'follow' karena GAS sering melakukan redirect internal
-        const response = await fetch(GAS_URL, { redirect: 'follow' });
-        
-        // KITA AMBIL SEBAGAI TEKS DULU (Untuk mengecek apakah Google mengirim HTML error atau JSON asli)
-        const rawText = await response.text();
+        // Mencoba mengubah teks menjadi format JSON
+        const result = JSON.parse(rawText);
 
-        try {
-          // Mencoba mengubah teks menjadi format JSON
-          const result = JSON.parse(rawText);
+        if (result.status === 'success') {
+          setDataKaryawan(result.data);
+          setError(null); // Reset error jika pemuatan berikutnya berhasil
 
-          if (result.status === 'success') {
-            setDataKaryawan(result.data);
-          } else {
-            // Ini jika nama sheet salah atau ada error dari dalam GAS
-            setError(`Pesan dari Server: ${result.message}`);
-          }
-        } catch (parseError) {
-          // JIKA ERROR MASUK KE SINI: Artinya Google mengirim halaman HTML Login/Error, bukan JSON.
-          console.error("Teks yang dikirim Google (Bukan JSON):", rawText);
-          setError("Akses diblokir oleh Google! Silakan buka Apps Script Anda > Kelola Deployment > Edit > Wajib pilih 'Versi baru' pada kolom Versi > Terapkan.");
+          // Catat waktu sinkronisasi sukses
+          const now = new Date();
+          const timeString = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          setLastUpdated(timeString);
+        } else {
+          // Ini jika nama sheet salah atau ada error dari dalam GAS
+          setError(`Pesan dari Server: ${result.message}`);
         }
-
-      } catch (err) {
-        console.error("Fetch error:", err);
-        setError("Terjadi kesalahan jaringan (Network Error). Pastikan koneksi internet stabil atau matikan ekstensi AdBlocker jika ada.");
-      } finally {
-        setIsLoading(false);
+      } catch (parseError) {
+        // JIKA ERROR MASUK KE SINI: Artinya Google mengirim halaman HTML Login/Error, bukan JSON.
+        console.error("Teks yang dikirim Google (Bukan JSON):", rawText);
+        setError("Akses diblokir oleh Google! Silakan buka Apps Script Anda > Kelola Deployment > Edit > Wajib pilih 'Versi baru' pada kolom Versi > Terapkan.");
       }
-    };
 
-    fetchData();
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("Terjadi kesalahan jaringan (Network Error). Pastikan koneksi internet stabil atau matikan ekstensi AdBlocker jika ada.");
+    } finally {
+      setIsLoading(false);
+      setIsSyncing(false);
+    }
   }, []);
+
+  // Memulai sinkronisasi pertama kali dan memasang interval polling otomatis
+  useEffect(() => {
+    fetchData(false);
+
+    // Polling otomatis data dari Spreadsheet setiap 60 detik (60000 ms)
+    const intervalId = setInterval(() => {
+      fetchData(true);
+    }, 60000);
+
+    // Bersihkan interval saat komponen di-unmount agar menghemat memori
+    return () => clearInterval(intervalId);
+  }, [fetchData]);
 
   // ==========================================
   // 4. FUNGSI BANTUAN (ACCORDION)
@@ -176,33 +200,87 @@ export default function App() {
               Dashboard Rekap Data Anak
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Sistem informasi interaktif rekapitulasi data anak karyawan berbasis data digital
+              Sistem informasi interaktif rekapitulasi data anak karyawan berbasis Google Formulir
             </p>
           </div>
         </div>
 
-        {/* Lencana Samping Kanan (Desktop) */}
-        <div className="hidden lg:flex items-center gap-3 bg-slate-50 border border-slate-100 p-3 rounded-xl max-w-xs">
-          <div className="p-2 bg-white rounded-lg border border-slate-200/60 shadow-sm shrink-0">
-            <img 
-              src="/image.png" 
-              alt="Favicon" 
-              className="w-7 h-7 object-contain"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/logo.png";
-              }}
-            />
+        {/* Lencana Samping Kanan & Indikator Real-time (Desktop) */}
+        <div className="hidden lg:flex flex-col gap-2 items-end">
+          <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 p-3 rounded-xl max-w-xs">
+            <div className="p-2 bg-white rounded-lg border border-slate-200/60 shadow-sm shrink-0">
+              <img 
+                src="/image.png" 
+                alt="Favicon" 
+                className="w-7 h-7 object-contain"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/logo.png";
+                }}
+              />
+            </div>
+            <div className="text-left pr-2">
+              <span className="block text-xs font-bold text-slate-700">Manajemen LPIT</span>
+              <span className="block text-[10px] text-slate-400">Data Real-Time</span>
+            </div>
           </div>
-          <div className="text-left pr-2">
-            <span className="block text-xs font-bold text-slate-700">Manajemen LPIT</span>
-            <span className="block text-[10px] text-slate-400">Data Real-Time</span>
+          
+          {/* Real-time Sync Indicator */}
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mr-1 bg-slate-100/60 px-2.5 py-1 rounded-full border border-slate-200/40">
+            {isSyncing ? (
+              <span className="flex items-center gap-1 text-blue-600 font-semibold">
+                <Loader2 size={12} className="animate-spin" /> Menyinkronkan...
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                Aktif (Terakhir: {lastUpdated || '-'})
+              </span>
+            )}
+            <button 
+              onClick={() => fetchData(true)} 
+              disabled={isSyncing}
+              className="hover:text-blue-600 transition-colors p-0.5 rounded-md hover:bg-slate-200/60"
+              title="Segarkan data sekarang"
+            >
+              <RefreshCw size={11} className={isSyncing ? "animate-spin text-blue-600" : "text-slate-400"} />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Tampilan Loading */}
-      {isLoading && (
+      {/* Mobile Sync Indicator (Ditampilkan hanya pada perangkat mobile di atas statistik) */}
+      <div className="flex lg:hidden items-center justify-between bg-white rounded-xl px-4 py-2.5 mb-5 text-xs text-slate-600 border border-slate-200/60 shadow-sm">
+        <div className="flex items-center gap-2">
+          {isSyncing ? (
+            <span className="flex items-center gap-1.5 text-blue-600 font-semibold">
+              <Loader2 size={12} className="animate-spin" /> Sinkronisasi data...
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              Sinkron Aktif ({lastUpdated || '-'})
+            </span>
+          )}
+        </div>
+        <button 
+          onClick={() => fetchData(true)} 
+          disabled={isSyncing}
+          className="flex items-center gap-1 text-blue-600 font-bold active:scale-95 transition-transform"
+        >
+          <RefreshCw size={12} className={isSyncing ? "animate-spin" : ""} />
+          Segarkan
+        </button>
+      </div>
+
+      {/* Tampilan Loading Utama (Hanya saat inisialisasi awal) */}
+      {isLoading && dataKaryawan.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl shadow-sm border border-slate-200">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
           <p className="text-slate-600 font-medium text-lg">Mengambil data dari Spreadsheet...</p>
@@ -211,7 +289,7 @@ export default function App() {
       )}
 
       {/* Tampilan Error */}
-      {!isLoading && error && (
+      {!isLoading && error && dataKaryawan.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-xl shadow-sm border border-red-200 text-center px-4">
           <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
           <h2 className="text-xl font-bold text-red-700 mb-2">Oops! Gagal Memuat Data</h2>
@@ -219,8 +297,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Tampilan Utama Dashboard (Hanya muncul jika sudah selesai loading dan tidak ada error) */}
-      {!isLoading && !error && (
+      {/* Tampilan Utama Dashboard */}
+      {dataKaryawan.length > 0 && (
         <>
           {/* Ringkasan Statistik */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
