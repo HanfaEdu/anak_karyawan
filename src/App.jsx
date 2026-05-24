@@ -176,7 +176,7 @@ export default function App() {
               Dashboard Rekap Data Anak
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Sistem informasi interaktif rekapitulasi data anak karyawan berbasis Google Formulir
+              Sistem informasi interaktif rekapitulasi data anak karyawan berbasis data digital
             </p>
           </div>
         </div>
