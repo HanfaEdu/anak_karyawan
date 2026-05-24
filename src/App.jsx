@@ -4,7 +4,7 @@ import { Search, Users, GraduationCap, Briefcase, User, Lightbulb, ChevronDown, 
 // ==========================================
 // 1. KONFIGURASI URL BACKEND (GAS)
 // ==========================================
-// Ganti teks di bawah ini dengan URL Web App Google Apps Script Anda yang berakhiran /exec
+// URL GAS Anda telah berhasil dipasang di sini
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyAuSYdm-IO9PqBBEC4CARCc7QkrLKsf1Cz2KsnHXoZqUeuC4YpBZo6qnw3vkLOUA2k/exec";
 
 export default function App() {
