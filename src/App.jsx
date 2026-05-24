@@ -321,7 +321,7 @@ export default function App() {
             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200/60 flex items-center gap-4">
               <div className="p-3 bg-slate-200 text-slate-600 rounded-lg"><Briefcase size={24} /></div>
               <div>
-                <p className="text-sm text-slate-500 font-medium">Lainnya / Belum Sekolah</p>
+                <p className="text-sm text-slate-500 font-medium">Bekerja / Menikah / Belum Sekolah</p>
                 <p className="text-2xl font-bold text-slate-950">{stats.totalAnakLainnya}</p>
               </div>
             </div>
